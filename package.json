@@ -1,0 +1,31 @@
+{
+  "name": "postcss-modules-constants",
+  "version": "1.0.0",
+  "description": "PostCSS plugin for CSS Modules to pass arbitrary constants between your module files",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "mocha --compilers js:babel/register"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/css-modules/postcss-modules-constants.git"
+  },
+  "keywords": [
+    "css",
+    "modules",
+    "postcss"
+  ],
+  "author": "Glen Maddern",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/css-modules/postcss-modules-constants/issues"
+  },
+  "homepage": "https://github.com/css-modules/postcss-modules-constants#readme",
+  "devDependencies": {
+    "babel": "^5.8.23",
+    "mocha": "^2.3.2"
+  },
+  "dependencies": {
+    "postcss": "^5.0.5"
+  }
+}
