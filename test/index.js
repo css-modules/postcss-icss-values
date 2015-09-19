@@ -59,5 +59,9 @@ describe('constants', () => {
       ':import("./colors.css") {\n  i__const_red_5: red\n}'
     )
   })
+
+  it('should import a simple constant with import-define', () => {
+    test('@import-define red from "./colors.css";', ':import("./colors.css") {\n  i__const_red_6: red\n}')
+  })
 })
 
