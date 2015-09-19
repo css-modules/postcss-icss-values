@@ -49,7 +49,7 @@ export default css => {
         }
       })
       importAliases.push({path, imports})
-      atRule.removeSelf()
+      atRule.remove()
     }
   })
 
