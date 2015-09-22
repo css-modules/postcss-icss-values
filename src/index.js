@@ -9,9 +9,10 @@ let importIndex = 0
 let createImportedName = options && options.createImportedName || ((importName/*, path*/) => `i__const_${importName.replace(/\W/g, '_')}_${importIndex++}`)
 
 export default css => {
-  /* Find any local let rules and store them*/
+  /* Find any @value statements that define locals */
   let translations = {}
-  css.walkAtRules(/^value$/, atRule => {
+  css.walkAtRules('value', atRule => {
+    if (matchImports.exec(atRule.params)) return
     let matches
     while (matches = matchLet.exec(atRule.params)) {
       let [/*match*/, key, value] = matches
@@ -29,9 +30,9 @@ export default css => {
     _autoprefixerDisabled: true
   }))
 
-  /* Find imports and insert ICSS tmp vars */
+  /* Treat @value statements that import them as defining ICSS tmp vars */
   let importAliases = []
-  css.walkAtRules(/^import(-value)?$/, atRule => {
+  css.walkAtRules('value', atRule => {
     let matches = matchImports.exec(atRule.params)
     if (matches) {
       let [/*match*/, aliases, path] = matches
