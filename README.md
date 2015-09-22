@@ -1,6 +1,6 @@
-# CSS Modules: Constants
+# CSS Modules: Values
 
-Pass arbitrary constants between your module files
+Pass arbitrary values between your module files
 
 ### Usage
 
@@ -49,3 +49,20 @@ Pass arbitrary constants between your module files
 ```
 
 Note that the `:` in a `@value` definition is optional as to not break Sass.
+
+### Justification
+
+See [this PR](https://github.com/css-modules/css-modules-loader-core/pull/28) for more background
+
+## License
+
+ISC
+
+## With thanks
+
+- Mark Dalgleish
+- Tobias Koppers
+- Josh Johnston
+
+---
+Glen Maddern, 2015.
