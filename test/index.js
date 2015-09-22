@@ -16,15 +16,15 @@ describe('constants', () => {
   })
 
   it('should export a constant', () => {
-    test('@define red blue;', ':export {\n  red: blue\n}')
+    test('@value red blue;', ':export {\n  red: blue\n}')
   })
 
   it('should export a more complex constant', () => {
-    test('@define small (max-width: 599px);', ':export {\n  small: (max-width: 599px)\n}')
+    test('@value small (max-width: 599px);', ':export {\n  small: (max-width: 599px)\n}')
   })
 
   it('should replace constants within the file', () => {
-    test('@define blue red; .foo { color: blue; }', ':export {\n  blue: red;\n}\n.foo { color: red; }')
+    test('@value blue red; .foo { color: blue; }', ':export {\n  blue: red;\n}\n.foo { color: red; }')
   })
 
   it('should import a simple constant', () => {
@@ -54,14 +54,14 @@ describe('constants', () => {
 
   it('should import from a definition', () => {
     test(
-      '@define colors: "./colors.css"; @import red from colors;',
+      '@value colors: "./colors.css"; @import red from colors;',
       ':export {\n  colors: "./colors.css"\n}\n' +
       ':import("./colors.css") {\n  i__const_red_5: red\n}'
     )
   })
 
-  it('should import a simple constant with import-define', () => {
-    test('@import-define red from "./colors.css";', ':import("./colors.css") {\n  i__const_red_6: red\n}')
+  it('should import a simple constant with import-value', () => {
+    test('@import-value red from "./colors.css";', ':import("./colors.css") {\n  i__const_red_6: red\n}')
   })
 })
 

@@ -11,7 +11,7 @@ let createImportedName = options && options.createImportedName || ((importName/*
 export default css => {
   /* Find any local let rules and store them*/
   let translations = {}
-  css.walkAtRules(/^define$/, atRule => {
+  css.walkAtRules(/^value$/, atRule => {
     let matches
     while (matches = matchLet.exec(atRule.params)) {
       let [/*match*/, key, value] = matches
@@ -31,7 +31,7 @@ export default css => {
 
   /* Find imports and insert ICSS tmp vars */
   let importAliases = []
-  css.walkAtRules(/^import(-define)?$/, atRule => {
+  css.walkAtRules(/^import(-value)?$/, atRule => {
     let matches = matchImports.exec(atRule.params)
     if (matches) {
       let [/*match*/, aliases, path] = matches
