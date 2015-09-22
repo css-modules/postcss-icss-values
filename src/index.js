@@ -9,41 +9,30 @@ let importIndex = 0
 let createImportedName = options && options.createImportedName || ((importName/*, path*/) => `i__const_${importName.replace(/\W/g, '_')}_${importIndex++}`)
 
 export default css => {
-  /* Find any @value statements that define locals */
-  let translations = {}
-  css.walkAtRules('value', atRule => {
-    if (matchImports.exec(atRule.params)) return
+  let importAliases = []
+  let definitions = {}
+
+  const addDefinition = atRule => {
     let matches
     while (matches = matchLet.exec(atRule.params)) {
       let [/*match*/, key, value] = matches
-      translations[key] = value
+      definitions[key] = value
       atRule.remove()
     }
-  })
+  }
 
-  /* We want to export anything defined by now, but don't add it to the CSS yet or
-  it well get picked up by the replacement stuff */
-  let exportDeclarations = Object.keys(translations).map(key => postcss.decl({
-    value: translations[key],
-    prop: key,
-    before: "\n  ",
-    _autoprefixerDisabled: true
-  }))
-
-  /* Treat @value statements that import them as defining ICSS tmp vars */
-  let importAliases = []
-  css.walkAtRules('value', atRule => {
+  const addImport = atRule => {
     let matches = matchImports.exec(atRule.params)
     if (matches) {
       let [/*match*/, aliases, path] = matches
       // We can use constants for path names
-      if (translations[path]) path = translations[path]
+      if (definitions[path]) path = definitions[path]
       let imports = aliases.split(/\s*,\s*/).map(alias => {
         let tokens = matchImport.exec(alias)
         if (tokens) {
           let [/*match*/, theirName, myName = theirName] = tokens
           let importedName = createImportedName(myName)
-          translations[myName] = importedName
+          definitions[myName] = importedName
           return {theirName, importedName}
         } else {
           throw new Error(`@import statement "${alias}" is invalid!`)
@@ -52,13 +41,31 @@ export default css => {
       importAliases.push({path, imports})
       atRule.remove()
     }
+  }
+
+  /* Look at all the @value statements and treat them as locals or as imports */
+  css.walkAtRules('value', atRule => {
+    if (matchImports.exec(atRule.params)) {
+      addImport(atRule)
+    } else {
+      addDefinition(atRule)
+    }
   })
 
-  /* If we have no translations, don't continue */
-  if (!Object.keys(translations).length) return
+  /* We want to export anything defined by now, but don't add it to the CSS yet or
+  it well get picked up by the replacement stuff */
+  let exportDeclarations = Object.keys(definitions).map(key => postcss.decl({
+    value: definitions[key],
+    prop: key,
+    before: "\n  ",
+    _autoprefixerDisabled: true
+  }))
+
+  /* If we have no definitions, don't continue */
+  if (!Object.keys(definitions).length) return
 
   /* Perform replacements */
-  replaceSymbols(css, translations)
+  replaceSymbols(css, definitions)
 
   /* Add import rules */
   importAliases.forEach(({path, imports}) => {
