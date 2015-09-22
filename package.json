@@ -1,5 +1,5 @@
 {
-  "name": "postcss-modules-constants",
+  "name": "postcss-modules-values",
   "version": "1.0.0",
   "description": "PostCSS plugin for CSS Modules to pass arbitrary constants between your module files",
   "main": "lib/index.js",
