@@ -16,6 +16,8 @@ export default css => {
     let matches
     while (matches = matchLet.exec(atRule.params)) {
       let [/*match*/, key, value] = matches
+      // Values can refer to each other
+      if (definitions[value]) value = definitions[value]
       definitions[key] = value
       atRule.remove()
     }

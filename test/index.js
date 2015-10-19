@@ -71,5 +71,12 @@ describe('constants', () => {
       ':import(colors) {\n  i__const_red_6: red\n}'
     )
   })
+
+  it('should allow transitive values', () => {
+    test(
+      '@value aaa: red;\n@value bbb: aaa;\n.a { color: bbb; }',
+      ':export {\n  aaa: red;\n  bbb: red;\n}\n.a { color: red; }'
+    )
+  })
 })
 
