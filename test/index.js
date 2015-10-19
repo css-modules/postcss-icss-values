@@ -78,5 +78,12 @@ describe('constants', () => {
       ':export {\n  aaa: red;\n  bbb: red;\n}\n.a { color: red; }'
     )
   })
+
+  it('should allow transitive values within calc', () => {
+    test(
+      '@value base: 10px;\n@value large: calc(base * 2);\n.a { margin: large; }',
+      ':export {\n  base: 10px;\n  large: calc(10px * 2);\n}\n.a { margin: calc(10px * 2); }'
+    )
+  })
 })
 
