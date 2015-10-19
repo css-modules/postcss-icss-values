@@ -94,5 +94,13 @@ describe('constants', () => {
       ':export {\n  a: i__const_a_7;\n  b: i__const_b_8\n}'
     )
   })
+
+  it('should allow custom-property-style names', () => {
+    test(
+      '@value --red from "./colors.css"; .foo { color: --red; }',
+      ':import("./colors.css") {\n  i__const___red_9: --red;\n}\n' +
+      ':export {\n  --red: i__const___red_9;\n}\n' +
+      '.foo { color: i__const___red_9; }')
+  })
 })
 
