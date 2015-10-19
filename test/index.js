@@ -87,7 +87,12 @@ describe('constants', () => {
   })
 
   it('should preserve import order', () => {
-    test('@value a from "./a.css"; @value b from "./b.css";', ':import("./a.css") {\n  i__const_a_7: a\n}\n:import("./b.css") {\n  i__const_b_8: b\n}\n:export {\n  a: i__const_a_7;\n  b: i__const_b_8\n}')
+    test(
+      '@value a from "./a.css"; @value b from "./b.css";',
+      ':import("./a.css") {\n  i__const_a_7: a\n}\n' +
+      ':import("./b.css") {\n  i__const_b_8: b\n}\n' +
+      ':export {\n  a: i__const_a_7;\n  b: i__const_b_8\n}'
+    )
   })
 })
 
