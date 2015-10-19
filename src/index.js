@@ -68,8 +68,17 @@ export default css => {
   /* Perform replacements */
   replaceSymbols(css, definitions)
 
+  /* Add export rules if any */
+  if (exportDeclarations.length > 0) {
+    css.prepend(postcss.rule({
+      selector: `:export`,
+      raws: { after: "\n" },
+      nodes: exportDeclarations
+    }))
+  }
+
   /* Add import rules */
-  importAliases.forEach(({path, imports}) => {
+  importAliases.reverse().forEach(({path, imports}) => {
     css.prepend(postcss.rule({
       selector: `:import(${path})`,
       raws: { after: "\n" },
@@ -81,13 +90,4 @@ export default css => {
       }))
     }))
   })
-
-  /* Add export rules if any */
-  if (exportDeclarations.length > 0) {
-    css.prepend(postcss.rule({
-      selector: `:export`,
-      raws: { after: "\n" },
-      nodes: exportDeclarations
-    }))
-  }
 }
