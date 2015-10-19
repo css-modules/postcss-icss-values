@@ -57,7 +57,7 @@ export default css => {
   let exportDeclarations = Object.keys(definitions).map(key => postcss.decl({
     value: definitions[key],
     prop: key,
-    before: "\n  ",
+    raws: { before: "\n  " },
     _autoprefixerDisabled: true
   }))
 
@@ -71,11 +71,11 @@ export default css => {
   importAliases.forEach(({path, imports}) => {
     css.prepend(postcss.rule({
       selector: `:import(${path})`,
-      after: "\n",
+      raws: { after: "\n" },
       nodes: imports.map(({theirName, importedName}) => postcss.decl({
         value: theirName,
         prop: importedName,
-        before: "\n  ",
+        raws: { before: "\n  " },
         _autoprefixerDisabled: true
       }))
     }))
@@ -85,7 +85,7 @@ export default css => {
   if (exportDeclarations.length > 0) {
     css.prepend(postcss.rule({
       selector: `:export`,
-      after: "\n",
+      raws: { after: "\n" },
       nodes: exportDeclarations
     }))
   }
