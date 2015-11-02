@@ -2,7 +2,7 @@ import postcss from 'postcss'
 import replaceSymbols, { replaceAll } from 'icss-replace-symbols'
 
 const matchImports = /^(.+?)\s+from\s+("[^"]*"|'[^']*'|[\w-]+)$/
-const matchLet = /(?:,\s+|^)([\w-]+):?\s+("[^"]*"|'[^']*'|[^,]+)\s?/g
+const matchValueDefinition = /(?:,\s+|^)([\w-]+):?\s+("[^"]*"|'[^']*'|\w+\([^\)]+\)|[^,]+)\s?/g
 const matchImport = /^([\w-]+)(?:\s+as\s+([\w-]+))?/
 let options = {}
 let importIndex = 0
@@ -14,7 +14,7 @@ export default css => {
 
   const addDefinition = atRule => {
     let matches
-    while (matches = matchLet.exec(atRule.params)) {
+    while (matches = matchValueDefinition.exec(atRule.params)) {
       let [/*match*/, key, value] = matches
       // Add to the definitions, knowing that values can refer to each other
       definitions[key] = replaceAll(definitions, value)
