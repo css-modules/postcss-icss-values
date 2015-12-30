@@ -3,10 +3,10 @@
 import postcss from 'postcss'
 import assert from 'assert'
 
-import constants from '../src'
+import values from '../src'
 
 const test = (input, expected) => {
-  let processor = postcss([constants])
+  let processor = postcss([values({importIndex: 0})])
   assert.equal(processor.process(input).css, expected)
 }
 
@@ -32,11 +32,11 @@ describe('constants', () => {
   })
 
   it('should import a simple constant and replace usages', () => {
-    test('@value red from "./colors.css"; .foo { color: red; }', ':import("./colors.css") {\n  i__const_red_1: red;\n}\n:export {\n  red: i__const_red_1;\n}\n.foo { color: i__const_red_1; }')
+    test('@value red from "./colors.css"; .foo { color: red; }', ':import("./colors.css") {\n  i__const_red_0: red;\n}\n:export {\n  red: i__const_red_0;\n}\n.foo { color: i__const_red_0; }')
   })
 
   it('should import and alias a constant and replace usages', () => {
-    test('@value blue as red from "./colors.css"; .foo { color: red; }', ':import("./colors.css") {\n  i__const_red_2: blue;\n}\n:export {\n  red: i__const_red_2;\n}\n.foo { color: i__const_red_2; }')
+    test('@value blue as red from "./colors.css"; .foo { color: red; }', ':import("./colors.css") {\n  i__const_red_0: blue;\n}\n:export {\n  red: i__const_red_0;\n}\n.foo { color: i__const_red_0; }')
   })
 
   it('should import multiple from a single file', () => {
@@ -45,30 +45,30 @@ describe('constants', () => {
 .foo { color: red; }
 .bar { color: blue }`,
       `:import("./colors.css") {
-  i__const_blue_3: blue;
-  i__const_red_4: red;
+  i__const_blue_0: blue;
+  i__const_red_1: red;
 }
 :export {
-  blue: i__const_blue_3;
-  red: i__const_red_4;
+  blue: i__const_blue_0;
+  red: i__const_red_1;
 }
-.foo { color: i__const_red_4; }
-.bar { color: i__const_blue_3 }`)
+.foo { color: i__const_red_1; }
+.bar { color: i__const_blue_0 }`)
   })
 
   it('should import from a definition', () => {
     test(
       '@value colors: "./colors.css"; @value red from colors;',
-      ':import("./colors.css") {\n  i__const_red_5: red\n}\n' +
-      ':export {\n  colors: "./colors.css";\n  red: i__const_red_5\n}'
+      ':import("./colors.css") {\n  i__const_red_0: red\n}\n' +
+      ':export {\n  colors: "./colors.css";\n  red: i__const_red_0\n}'
     )
   })
 
   it('should only allow values for paths if defined in the right order', () => {
     test(
       '@value red from colors; @value colors: "./colors.css";',
-      ':import(colors) {\n  i__const_red_6: red\n}\n' +
-      ':export {\n  red: i__const_red_6;\n  colors: "./colors.css"\n}'
+      ':import(colors) {\n  i__const_red_0: red\n}\n' +
+      ':export {\n  red: i__const_red_0;\n  colors: "./colors.css"\n}'
     )
   })
 
@@ -89,18 +89,18 @@ describe('constants', () => {
   it('should preserve import order', () => {
     test(
       '@value a from "./a.css"; @value b from "./b.css";',
-      ':import("./a.css") {\n  i__const_a_7: a\n}\n' +
-      ':import("./b.css") {\n  i__const_b_8: b\n}\n' +
-      ':export {\n  a: i__const_a_7;\n  b: i__const_b_8\n}'
+      ':import("./a.css") {\n  i__const_a_0: a\n}\n' +
+      ':import("./b.css") {\n  i__const_b_1: b\n}\n' +
+      ':export {\n  a: i__const_a_0;\n  b: i__const_b_1\n}'
     )
   })
 
   it('should allow custom-property-style names', () => {
     test(
       '@value --red from "./colors.css"; .foo { color: --red; }',
-      ':import("./colors.css") {\n  i__const___red_9: --red;\n}\n' +
-      ':export {\n  --red: i__const___red_9;\n}\n' +
-      '.foo { color: i__const___red_9; }')
+      ':import("./colors.css") {\n  i__const___red_0: --red;\n}\n' +
+      ':export {\n  --red: i__const___red_0;\n}\n' +
+      '.foo { color: i__const___red_0; }')
   })
 
   it('should allow all colour types', () => {
