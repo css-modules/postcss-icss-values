@@ -8,7 +8,7 @@ let options = {}
 let importIndex = 0
 let createImportedName = options && options.createImportedName || ((importName/*, path*/) => `i__const_${importName.replace(/\W/g, '_')}_${importIndex++}`)
 
-export default css => {
+export default (css, result) => {
   let importAliases = []
   let definitions = {}
 
@@ -49,6 +49,10 @@ export default css => {
     if (matchImports.exec(atRule.params)) {
       addImport(atRule)
     } else {
+      if (atRule.params.indexOf('@value') !== -1) {
+        result.warn('Invalid value definition: ' + atRule.params)
+      }
+
       addDefinition(atRule)
     }
   })
