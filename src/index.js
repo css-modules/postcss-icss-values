@@ -1,5 +1,5 @@
 import postcss from 'postcss'
-import replaceSymbols, { replaceAll } from 'icss-replace-symbols'
+import replaceSymbols, {replaceAll} from 'icss-replace-symbols'
 
 const matchImports = /^(.+?)\s+from\s+("[^"]*"|'[^']*'|[\w-]+)$/
 const matchValueDefinition = /(?:,\s+|^)([\w-]+):?\s+("[^"]*"|'[^']*'|\w+\([^\)]+\)|[^,]+)\s?/g
@@ -34,12 +34,12 @@ export default (css, result) => {
           let [/*match*/, theirName, myName = theirName] = tokens
           let importedName = createImportedName(myName)
           definitions[myName] = importedName
-          return {theirName, importedName}
+          return { theirName, importedName }
         } else {
           throw new Error(`@import statement "${alias}" is invalid!`)
         }
       })
-      importAliases.push({path, imports})
+      importAliases.push({ path, imports })
       atRule.remove()
     }
   }
@@ -58,12 +58,11 @@ export default (css, result) => {
   })
 
   /* We want to export anything defined by now, but don't add it to the CSS yet or
-  it well get picked up by the replacement stuff */
+   it well get picked up by the replacement stuff */
   let exportDeclarations = Object.keys(definitions).map(key => postcss.decl({
     value: definitions[key],
     prop: key,
-    raws: { before: "\n  " },
-    _autoprefixerDisabled: true
+    raws: { before: "\n  " }
   }))
 
   /* If we have no definitions, don't continue */
@@ -74,24 +73,28 @@ export default (css, result) => {
 
   /* Add export rules if any */
   if (exportDeclarations.length > 0) {
-    css.prepend(postcss.rule({
+    let exportRule = postcss.rule({
       selector: `:export`,
-      raws: { after: "\n" },
-      nodes: exportDeclarations
-    }))
+      raws: { after: "\n" }
+    })
+    exportRule.append(exportDeclarations)
+    css.prepend(exportRule)
   }
 
   /* Add import rules */
-  importAliases.reverse().forEach(({path, imports}) => {
-    css.prepend(postcss.rule({
+  importAliases.reverse().forEach(({ path, imports }) => {
+    let importRule = postcss.rule({
       selector: `:import(${path})`,
-      raws: { after: "\n" },
-      nodes: imports.map(({theirName, importedName}) => postcss.decl({
+      raws: { after: "\n" }
+    })
+    imports.forEach(({ theirName, importedName }) => {
+      importRule.append({
         value: theirName,
         prop: importedName,
-        raws: { before: "\n  " },
-        _autoprefixerDisabled: true
-      }))
-    }))
+        raws: { before: "\n  " }
+      })
+    })
+
+    css.prepend(importRule)
   })
 }
