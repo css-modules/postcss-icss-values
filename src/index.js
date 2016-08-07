@@ -2,7 +2,7 @@ import postcss from 'postcss'
 import replaceSymbols, {replaceAll} from 'icss-replace-symbols'
 
 const matchImports = /^(.+?)\s+from\s+("[^"]*"|'[^']*'|[\w-]+)$/
-const matchValueDefinition = /(?:,\s+|^)([\w-]+):?\s+("[^"]*"|'[^']*'|\w+\([^\)]+\)|[^,]+)\s?/g
+const matchValueDefinition = /(?:,\s+|^)([\w-]+):?\s+("[^"]*"|'[^']*'|\w+\(.+\)|[^,]+)\s?/g
 const matchImport = /^([\w-]+)(?:\s+as\s+([\w-]+))?/
 let options = {}
 let importIndex = 0
