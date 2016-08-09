@@ -120,4 +120,24 @@ describe('constants', () => {
       ':export {\n  named: red;\n  3char: #0f0;\n  6char: #00ff00;\n  rgba: rgba(34, 12, 64, 0.3);\n  hsla: hsla(220, 13.0%, 18.0%, 1);\n}\n' +
       '.foo { color: red; background-color: #0f0; border-top-color: #00ff00; border-bottom-color: rgba(34, 12, 64, 0.3); outline-color: hsla(220, 13.0%, 18.0%, 1); }')
   })
+
+  it('should import multiple from a single file on multiple lines', () => {
+    test(
+      `@value (
+  blue,
+  red
+) from "./colors.css";
+.foo { color: red; }
+.bar { color: blue }`,
+      `:import("./colors.css") {
+  i__const_blue_10: blue;
+  i__const_red_11: red;
+}
+:export {
+  blue: i__const_blue_10;
+  red: i__const_red_11;
+}
+.foo { color: i__const_red_11; }
+.bar { color: i__const_blue_10 }`)
+  })
 })
