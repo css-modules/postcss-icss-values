@@ -28,7 +28,7 @@
   },
   "homepage": "https://github.com/css-modules/postcss-modules-constants#readme",
   "devDependencies": {
-    "babel": "^5.8.23",
+    "babel": "^6.5.0",
     "chokidar": "^1.2.0",
     "mocha": "^3.0.2",
     "standard": "^7.1.2"
