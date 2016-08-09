@@ -29,7 +29,7 @@
   "homepage": "https://github.com/css-modules/postcss-modules-constants#readme",
   "devDependencies": {
     "babel": "^6.5.2",
-    "chokidar": "^1.2.0",
+    "chokidar": "^1.4.1",
     "mocha": "^3.0.2",
     "standard": "^7.1.2"
   },
