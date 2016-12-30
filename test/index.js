@@ -5,8 +5,9 @@ import assert from 'assert'
 
 import constants from '../src'
 
+const processor = postcss([constants()])
+
 const test = (input, expected) => {
-  let processor = postcss([constants])
   assert.equal(processor.process(input).css, expected)
 }
 
