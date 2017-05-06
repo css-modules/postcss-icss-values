@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "icss-replace-symbols": "^1.0.2",
-    "postcss": "^5.0.14"
+    "postcss": "^6.0.0"
   },
   "babel": {
     "presets": [
