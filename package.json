@@ -1,7 +1,7 @@
 {
   "name": "postcss-modules-values",
   "version": "1.2.2",
-  "description": "PostCSS plugin for CSS Modules to pass arbitrary constants between your module files",
+  "description": "PostCSS plugin for CSS Modules to pass arbitrary values between your module files",
   "main": "lib/index.js",
   "scripts": {
     "lint": "standard src test",
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/css-modules/postcss-modules-constants.git"
+    "url": "git+https://github.com/css-modules/postcss-modules-values.git"
   },
   "keywords": [
     "css",
@@ -24,9 +24,9 @@
   "author": "Glen Maddern",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/css-modules/postcss-modules-constants/issues"
+    "url": "https://github.com/css-modules/postcss-modules-values/issues"
   },
-  "homepage": "https://github.com/css-modules/postcss-modules-constants#readme",
+  "homepage": "https://github.com/css-modules/postcss-modules-values#readme",
   "devDependencies": {
     "babel-cli": "^6.5.2",
     "babel-core": "^6.5.2",
@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "icss-replace-symbols": "^1.0.2",
-    "postcss": "^5.0.14"
+    "postcss": "^6.0.1"
   },
   "babel": {
     "presets": [
