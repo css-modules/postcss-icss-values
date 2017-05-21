@@ -1,6 +1,20 @@
 # CSS Modules: Values
 
-Pass arbitrary values between your module files
+Pass arbitrary values between your module files, transforms
+
+```css
+@value primary: #BF4040;
+@value secondary: #1F4F7F;
+```
+
+into
+
+```css
+:export {
+  primary: #BF4040;
+  secondary: #1F4F7F;
+}
+```
 
 ### Usage
 
