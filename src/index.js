@@ -4,12 +4,10 @@ const { default: replaceSymbols, replaceAll } = require('icss-replace-symbols')
 const matchImports = /^(.+?|\([\s\S]+?\))\s+from\s+("[^"]*"|'[^']*'|[\w-]+)$/
 const matchValueDefinition = /(?:\s+|^)([\w-]+):?\s+(.+?)\s*$/g
 const matchImport = /^([\w-]+)(?:\s+as\s+([\w-]+))?/
-let options = {}
+
 let importIndex = 0
-let createImportedName =
-  (options && options.createImportedName) ||
-  ((importName /*, path*/) =>
-    `i__const_${importName.replace(/\W/g, '_')}_${importIndex++}`)
+const createImportedName = importName =>
+  `i__const_${importName.replace(/\W/g, '_')}_${importIndex++}`
 
 module.exports = postcss.plugin('postcss-modules-values', () => (
   css,
