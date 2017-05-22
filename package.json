@@ -34,6 +34,9 @@
     "type": "git",
     "url": "git+https://github.com/css-modules/postcss-modules-values.git"
   },
+  "files": [
+    "lib"
+  ],
   "keywords": [
     "css",
     "modules",
