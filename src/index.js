@@ -5,6 +5,42 @@ const matchImports = /^(.+?|\([\s\S]+?\))\s+from\s+("[^"]*"|'[^']*'|[\w-]+)$/
 const matchValueDefinition = /(?:\s+|^)([\w-]+):?\s+(.+?)\s*$/g
 const matchImport = /^([\w-]+)(?:\s+as\s+([\w-]+))?/
 
+const addImportsRules = (css, imports) => {
+  const rules = imports.map(({ path, aliases }) => {
+    const declarations = Object.keys(aliases).map(key =>
+      postcss.decl({
+        prop: key,
+        value: aliases[key],
+        raws: { before: '\n  ' }
+      })
+    )
+    return postcss
+      .rule({
+        selector: `:import(${path})`,
+        raws: { after: '\n' }
+      })
+      .append(declarations)
+  })
+  css.prepend(rules)
+}
+
+const addExportsRule = (css, exports) => {
+  const declarations = Object.keys(exports).map(key =>
+    postcss.decl({
+      prop: key,
+      value: exports[key],
+      raws: { before: '\n  ' }
+    })
+  )
+  const rule = postcss
+    .rule({
+      selector: `:export`,
+      raws: { after: '\n' }
+    })
+    .append(declarations)
+  css.prepend(rule)
+}
+
 let importIndex = 0
 const createImportedName = importName =>
   `i__const_${importName.replace(/\W/g, '_')}_${importIndex++}`
@@ -29,10 +65,10 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
   const addImport = atRule => {
     let matches = matchImports.exec(atRule.params)
     if (matches) {
-      let [, aliases, path] = matches
+      let [, aliasesString, path] = matches
       // We can use constants for path names
       if (definitions[path]) path = definitions[path]
-      let imports = aliases
+      let aliases = aliasesString
         .replace(/^\(\s*([\s\S]+)\s*\)$/, '$1')
         .split(/\s*,\s*/)
         .map(alias => {
@@ -46,7 +82,11 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
             throw new Error(`@import statement "${alias}" is invalid!`)
           }
         })
-      importAliases.push({ path, imports })
+        .reduce((acc, { theirName, importedName }) => {
+          acc[importedName] = theirName
+          return acc
+        }, {})
+      importAliases.push({ path, aliases })
       atRule.remove()
     }
   }
@@ -64,46 +104,13 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
     }
   })
 
-  /* We want to export anything defined by now, but don't add it to the CSS yet or
-   it well get picked up by the replacement stuff */
-  let exportDeclarations = Object.keys(definitions).map(key =>
-    postcss.decl({
-      value: definitions[key],
-      prop: key,
-      raws: { before: '\n  ' }
-    })
-  )
-
   /* If we have no definitions, don't continue */
-  if (!Object.keys(definitions).length) return
+  if (Object.keys(definitions).length === 0) return
 
   /* Perform replacements */
   replaceSymbols(css, definitions)
 
-  /* Add export rules if any */
-  if (exportDeclarations.length > 0) {
-    let exportRule = postcss.rule({
-      selector: `:export`,
-      raws: { after: '\n' }
-    })
-    exportRule.append(exportDeclarations)
-    css.prepend(exportRule)
-  }
+  addExportsRule(css, definitions)
 
-  /* Add import rules */
-  importAliases.reverse().forEach(({ path, imports }) => {
-    let importRule = postcss.rule({
-      selector: `:import(${path})`,
-      raws: { after: '\n' }
-    })
-    imports.forEach(({ theirName, importedName }) => {
-      importRule.append({
-        value: theirName,
-        prop: importedName,
-        raws: { before: '\n  ' }
-      })
-    })
-
-    css.prepend(importRule)
-  })
+  addImportsRules(css, importAliases)
 })
