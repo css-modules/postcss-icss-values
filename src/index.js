@@ -14,14 +14,13 @@ const matchImport = /^([\w-]+)(?:\s+as\s+([\w-]+))?/
 const getAliasName = (name, index) =>
   `i__value_${name.replace(/\W/g, '_')}_${index}`
 
-let importIndex = 0
-
 module.exports = postcss.plugin('postcss-modules-values', () => (
   css,
   result
 ) => {
   const imports = extractICSSImports(css)
   const exports = extractICSSExports(css)
+  let importIndex = 0
   const createImportedName = (path, name) => {
     const importedName = getAliasName(name, importIndex)
     if (imports[path] && imports[path][importedName]) {
