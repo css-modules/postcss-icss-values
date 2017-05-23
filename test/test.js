@@ -76,10 +76,10 @@ test('should import and re-export a simple constant', () => {
   ).resolves.toEqual(
     strip(`
       :import("./colors.css") {
-        i__const_red_0: red
+        __value_red_0: red
       }
       :export {
-        red: i__const_red_0
+        red: __value_red_0
       }
     `)
   )
@@ -94,12 +94,12 @@ test('should import a simple constant and replace usages', () => {
   ).resolves.toEqual(
     strip(`
       :import("./colors.css") {
-        i__const_red_1: red;
+        __value_red_1: red;
       }
       :export {
-        red: i__const_red_1;
+        red: __value_red_1;
       }
-      .foo { color: i__const_red_1; }
+      .foo { color: __value_red_1; }
     `)
   )
 })
@@ -113,12 +113,12 @@ test('should import and alias a constant and replace usages', () => {
   ).resolves.toEqual(
     strip(`
       :import("./colors.css") {
-        i__const_red_2: blue;
+        __value_red_2: blue;
       }
       :export {
-        red: i__const_red_2;
+        red: __value_red_2;
       }
-      .foo { color: i__const_red_2; }
+      .foo { color: __value_red_2; }
     `)
   )
 })
@@ -133,15 +133,15 @@ test('should import multiple from a single file', () => {
   ).resolves.toEqual(
     strip(`
       :import("./colors.css") {
-        i__const_blue_3: blue;
-        i__const_red_4: red;
+        __value_blue_3: blue;
+        __value_red_4: red;
       }
       :export {
-        blue: i__const_blue_3;
-        red: i__const_red_4;
+        blue: __value_blue_3;
+        red: __value_red_4;
       }
-      .foo { color: i__const_red_4; }
-      .bar { color: i__const_blue_3 }
+      .foo { color: __value_red_4; }
+      .bar { color: __value_blue_3 }
     `)
   )
 })
@@ -154,11 +154,11 @@ test('should import from a definition', () => {
   ).resolves.toEqual(
     strip(`
       :import("./colors.css") {
-        i__const_red_5: red
+        __value_red_5: red
       }
       :export {
         colors: "./colors.css";
-        red: i__const_red_5
+        red: __value_red_5
       }
     `)
   )
@@ -172,10 +172,10 @@ test('should only allow values for paths if defined in the right order', () => {
   ).resolves.toEqual(
     strip(`
       :import(colors) {
-        i__const_red_6: red
+        __value_red_6: red
       }
       :export {
-        red: i__const_red_6;
+        red: __value_red_6;
         colors: "./colors.css"
       }
     `)
@@ -226,14 +226,14 @@ test('should preserve import order', () => {
   ).resolves.toEqual(
     strip(`
       :import("./a.css") {
-        i__const_a_7: a
+        __value_a_7: a
       }
       :import("./b.css") {
-        i__const_b_8: b
+        __value_b_8: b
       }
       :export {
-        a: i__const_a_7;
-        b: i__const_b_8
+        a: __value_a_7;
+        b: __value_b_8
       }
     `)
   )
@@ -247,12 +247,12 @@ test('should allow custom-property-style names', () => {
   ).resolves.toEqual(
     strip(`
       :import("./colors.css") {
-        i__const___red_9: --red;
+        __value___red_9: --red;
       }
       :export {
-        --red: i__const___red_9;
+        --red: __value___red_9;
       }
-      .foo { color: i__const___red_9; }
+      .foo { color: __value___red_9; }
     `)
   )
 })
@@ -306,15 +306,15 @@ test('should import multiple from a single file on multiple lines', () => {
   ).resolves.toEqual(
     strip(`
       :import("./colors.css") {
-        i__const_blue_10: blue;
-        i__const_red_11: red;
+        __value_blue_10: blue;
+        __value_red_11: red;
       }
       :export {
-        blue: i__const_blue_10;
-        red: i__const_red_11;
+        blue: __value_blue_10;
+        red: __value_red_11;
       }
-      .foo { color: i__const_red_11; }
-      .bar { color: i__const_blue_10 }
+      .foo { color: __value_red_11; }
+      .bar { color: __value_blue_10 }
     `)
   )
 })

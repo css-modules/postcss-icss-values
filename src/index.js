@@ -6,9 +6,11 @@ const matchImports = /^(.+?|\([\s\S]+?\))\s+from\s+("[^"]*"|'[^']*'|[\w-]+)$/
 const matchValueDefinition = /(?:\s+|^)([\w-]+):?\s+(.+?)\s*$/g
 const matchImport = /^([\w-]+)(?:\s+as\s+([\w-]+))?/
 
+const getAliasName = (name, index) =>
+  `__value_${name.replace(/\W/g, '_')}_${index}`
+
 let importIndex = 0
-const createImportedName = importName =>
-  `i__const_${importName.replace(/\W/g, '_')}_${importIndex++}`
+const createImportedName = importName => getAliasName(importName, importIndex++)
 
 module.exports = postcss.plugin('postcss-modules-values', () => (
   css,
