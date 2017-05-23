@@ -1,10 +1,6 @@
 const postcss = require('postcss')
 const { default: replaceSymbols, replaceAll } = require('icss-replace-symbols')
-const {
-  extractICSSImports,
-  extractICSSExports,
-  genICSSRules
-} = require('./icss.js')
+const { extractICSS, createICSSRules } = require('./icss.js')
 
 const matchImports = /^(.+?|\([\s\S]+?\))\s+from\s+("[^"]*"|'[^']*'|[\w-]+)$/
 const matchValueDefinition = /(?:\s+|^)([\w-]+):?\s+(.+?)\s*$/g
@@ -18,8 +14,7 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
   css,
   result
 ) => {
-  const imports = extractICSSImports(css)
-  const exports = extractICSSExports(css)
+  const { imports, exports } = extractICSS(css)
   let importIndex = 0
   const createImportedName = (path, name) => {
     const importedName = getAliasName(name, importIndex)
@@ -89,5 +84,5 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
   /* Perform replacements */
   replaceSymbols(css, exports)
 
-  css.prepend(genICSSRules(imports, exports))
+  css.prepend(createICSSRules(imports, exports))
 })

@@ -12,29 +12,28 @@ const getDeclsObject = rule => {
   return object
 }
 
-export const extractICSSImports = css => {
+export const extractICSS = css => {
   const imports = {}
-  css.walkRules(rule => {
-    const matches = importPattern.exec(rule.selector)
-    if (matches) {
-      const path = matches[1]
-      imports[path] = Object.assign({}, imports[path], getDeclsObject(rule))
-      rule.remove()
+  const exports = {}
+  css.each(node => {
+    if (node.type === 'rule') {
+      const matches = importPattern.exec(node.selector)
+      if (matches) {
+        const path = matches[1]
+        const aliases = Object.assign({}, imports[path], getDeclsObject(node))
+        imports[path] = aliases
+        node.remove()
+      }
+      if (exportPattern.test(node.selector)) {
+        Object.assign(exports, getDeclsObject(node))
+        node.remove()
+      }
     }
   })
-  return imports
+  return { imports, exports }
 }
 
-export const extractICSSExports = css => {
-  const exports = {}
-  css.walkRules(exportPattern, rule => {
-    Object.assign(exports, getDeclsObject(rule))
-    rule.remove()
-  })
-  return exports
-}
-
-const genICSSImportsRules = imports => {
+const createICSSImportsRules = imports => {
   return Object.keys(imports).map(path => {
     const aliases = imports[path]
     const declarations = Object.keys(aliases).map(key =>
@@ -53,7 +52,7 @@ const genICSSImportsRules = imports => {
   })
 }
 
-const genICSSExportsRule = exports => {
+const createICSSExportsRule = exports => {
   const declarations = Object.keys(exports).map(key =>
     postcss.decl({
       prop: key,
@@ -69,7 +68,7 @@ const genICSSExportsRule = exports => {
     .append(declarations)
 }
 
-export const genICSSRules = (imports, exports) => [
-  ...genICSSImportsRules(imports),
-  genICSSExportsRule(exports)
+export const createICSSRules = (imports, exports) => [
+  ...createICSSImportsRules(imports),
+  createICSSExportsRule(exports)
 ]
