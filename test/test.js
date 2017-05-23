@@ -373,3 +373,24 @@ test('reuse existing :import with same name and :export', () => {
     `)
   )
 })
+
+test('prevent imported names collision', () => {
+  return expect(
+    runCSS(`
+      :import(colors) {
+        i__value_a_13: a;
+      }
+      @value a from colors;
+    `)
+  ).resolves.toEqual(
+    strip(`
+      :import(colors) {
+        i__value_a_13: a;
+        i__value_a_14: a
+      }
+      :export {
+        a: i__value_a_14
+      }
+    `)
+  )
+})

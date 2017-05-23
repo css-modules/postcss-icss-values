@@ -15,7 +15,6 @@ const getAliasName = (name, index) =>
   `i__value_${name.replace(/\W/g, '_')}_${index}`
 
 let importIndex = 0
-const createImportedName = importName => getAliasName(importName, importIndex++)
 
 module.exports = postcss.plugin('postcss-modules-values', () => (
   css,
@@ -23,6 +22,15 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
 ) => {
   const imports = extractICSSImports(css)
   const exports = extractICSSExports(css)
+  const createImportedName = (path, name) => {
+    const importedName = getAliasName(name, importIndex)
+    if (imports[path] && imports[path][importedName]) {
+      importIndex += 1
+      return createImportedName(path, name)
+    }
+    importIndex += 1
+    return importedName
+  }
 
   const addDefinition = atRule => {
     let matches
@@ -47,7 +55,7 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
           let tokens = matchImport.exec(alias)
           if (tokens) {
             let [, theirName, myName = theirName] = tokens
-            let importedName = createImportedName(myName)
+            let importedName = createImportedName(path, myName)
             exports[myName] = importedName
             return { theirName, importedName }
           } else {
