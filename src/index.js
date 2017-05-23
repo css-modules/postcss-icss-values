@@ -1,45 +1,10 @@
 const postcss = require('postcss')
 const { default: replaceSymbols, replaceAll } = require('icss-replace-symbols')
+const { genICSSRules } = require('./icss.js')
 
 const matchImports = /^(.+?|\([\s\S]+?\))\s+from\s+("[^"]*"|'[^']*'|[\w-]+)$/
 const matchValueDefinition = /(?:\s+|^)([\w-]+):?\s+(.+?)\s*$/g
 const matchImport = /^([\w-]+)(?:\s+as\s+([\w-]+))?/
-
-const addImportsRules = (css, imports) => {
-  const rules = imports.map(({ path, aliases }) => {
-    const declarations = Object.keys(aliases).map(key =>
-      postcss.decl({
-        prop: key,
-        value: aliases[key],
-        raws: { before: '\n  ' }
-      })
-    )
-    return postcss
-      .rule({
-        selector: `:import(${path})`,
-        raws: { after: '\n' }
-      })
-      .append(declarations)
-  })
-  css.prepend(rules)
-}
-
-const addExportsRule = (css, exports) => {
-  const declarations = Object.keys(exports).map(key =>
-    postcss.decl({
-      prop: key,
-      value: exports[key],
-      raws: { before: '\n  ' }
-    })
-  )
-  const rule = postcss
-    .rule({
-      selector: `:export`,
-      raws: { after: '\n' }
-    })
-    .append(declarations)
-  css.prepend(rule)
-}
 
 let importIndex = 0
 const createImportedName = importName =>
@@ -74,7 +39,7 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
         .map(alias => {
           let tokens = matchImport.exec(alias)
           if (tokens) {
-            let [, /*match*/ theirName, myName = theirName] = tokens
+            let [, theirName, myName = theirName] = tokens
             let importedName = createImportedName(myName)
             definitions[myName] = importedName
             return { theirName, importedName }
@@ -110,7 +75,5 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
   /* Perform replacements */
   replaceSymbols(css, definitions)
 
-  addExportsRule(css, definitions)
-
-  addImportsRules(css, importAliases)
+  css.prepend(genICSSRules(importAliases, definitions))
 })
