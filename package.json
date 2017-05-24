@@ -56,7 +56,7 @@
     "strip-indent": "^2.0.0"
   },
   "dependencies": {
-    "icss-replace-symbols": "^1.1.0",
+    "icss-utils": "^2.0.0",
     "postcss": "^6.0.1"
   }
 }

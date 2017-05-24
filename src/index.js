@@ -1,6 +1,10 @@
-const postcss = require('postcss')
-const { default: replaceSymbols, replaceAll } = require('icss-replace-symbols')
-const { extractICSS, createICSSRules } = require('./icss.js')
+import postcss from 'postcss'
+import {
+  replaceSymbols,
+  replaceValueSymbols,
+  extractICSS,
+  createICSSRules
+} from 'icss-utils'
 
 const matchImports = /^(.+?|\([\s\S]+?\))\s+from\s+("[^"]*"|'[^']*'|[\w-]+)$/
 const matchValueDefinition = /(?:\s+|^)([\w-]+):?\s+(.+?)\s*$/g
@@ -14,11 +18,11 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
   css,
   result
 ) => {
-  const { imports, exports } = extractICSS(css)
+  const { icssImports, icssExports } = extractICSS(css)
   let importIndex = 0
   const createImportedName = (path, name) => {
     const importedName = getAliasName(name, importIndex)
-    if (imports[path] && imports[path][importedName]) {
+    if (icssImports[path] && icssImports[path][importedName]) {
       importIndex += 1
       return createImportedName(path, name)
     }
@@ -31,7 +35,7 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
     while ((matches = matchValueDefinition.exec(atRule.params))) {
       let [, key, value] = matches
       // Add to the definitions, knowing that values can refer to each other
-      exports[key] = replaceAll(exports, value)
+      icssExports[key] = replaceValueSymbols(value, icssExports)
       atRule.remove()
     }
   }
@@ -41,7 +45,7 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
     if (matches) {
       let [, aliasesString, path] = matches
       // We can use constants for path names
-      if (exports[path]) path = exports[path]
+      if (icssExports[path]) path = icssExports[path]
       let aliases = aliasesString
         .replace(/^\(\s*([\s\S]+)\s*\)$/, '$1')
         .split(/\s*,\s*/)
@@ -50,7 +54,7 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
           if (tokens) {
             let [, theirName, myName = theirName] = tokens
             let importedName = createImportedName(path, myName)
-            exports[myName] = importedName
+            icssExports[myName] = importedName
             return { theirName, importedName }
           } else {
             throw new Error(`@import statement "${alias}" is invalid!`)
@@ -60,7 +64,7 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
           acc[importedName] = theirName
           return acc
         }, {})
-      imports[path] = Object.assign({}, imports[path], aliases)
+      icssImports[path] = Object.assign({}, icssImports[path], aliases)
       atRule.remove()
     }
   }
@@ -79,10 +83,10 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
   })
 
   /* If we have no definitions, don't continue */
-  if (Object.keys(exports).length === 0) return
+  if (Object.keys(icssExports).length === 0) return
 
   /* Perform replacements */
-  replaceSymbols(css, exports)
+  replaceSymbols(css, icssExports)
 
-  css.prepend(createICSSRules(imports, exports))
+  css.prepend(createICSSRules(icssImports, icssExports))
 })
