@@ -82,10 +82,8 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
     }
   })
 
-  /* If we have no definitions, don't continue */
   if (Object.keys(icssExports).length === 0) return
 
-  /* Perform replacements */
   replaceSymbols(css, icssExports)
 
   css.prepend(createICSSRules(icssImports, icssExports))
