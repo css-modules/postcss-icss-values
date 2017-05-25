@@ -1,63 +1,41 @@
-const postcss = require('postcss')
-const { default: replaceSymbols, replaceAll } = require('icss-replace-symbols')
+import postcss from 'postcss'
+import {
+  replaceSymbols,
+  replaceValueSymbols,
+  extractICSS,
+  createICSSRules
+} from 'icss-utils'
 
 const matchImports = /^(.+?|\([\s\S]+?\))\s+from\s+("[^"]*"|'[^']*'|[\w-]+)$/
 const matchValueDefinition = /(?:\s+|^)([\w-]+):?\s+(.+?)\s*$/g
 const matchImport = /^([\w-]+)(?:\s+as\s+([\w-]+))?/
 
-const addImportsRules = (css, imports) => {
-  const rules = imports.map(({ path, aliases }) => {
-    const declarations = Object.keys(aliases).map(key =>
-      postcss.decl({
-        prop: key,
-        value: aliases[key],
-        raws: { before: '\n  ' }
-      })
-    )
-    return postcss
-      .rule({
-        selector: `:import(${path})`,
-        raws: { after: '\n' }
-      })
-      .append(declarations)
-  })
-  css.prepend(rules)
-}
-
-const addExportsRule = (css, exports) => {
-  const declarations = Object.keys(exports).map(key =>
-    postcss.decl({
-      prop: key,
-      value: exports[key],
-      raws: { before: '\n  ' }
-    })
-  )
-  const rule = postcss
-    .rule({
-      selector: `:export`,
-      raws: { after: '\n' }
-    })
-    .append(declarations)
-  css.prepend(rule)
-}
-
-let importIndex = 0
-const createImportedName = importName =>
-  `i__const_${importName.replace(/\W/g, '_')}_${importIndex++}`
+// 'i' prefix to prevent postcss parsing "_" as css hook
+const getAliasName = (name, index) =>
+  `i__value_${name.replace(/\W/g, '_')}_${index}`
 
 module.exports = postcss.plugin('postcss-modules-values', () => (
   css,
   result
 ) => {
-  let importAliases = []
-  let definitions = {}
+  const { icssImports, icssExports } = extractICSS(css)
+  let importIndex = 0
+  const createImportedName = (path, name) => {
+    const importedName = getAliasName(name, importIndex)
+    if (icssImports[path] && icssImports[path][importedName]) {
+      importIndex += 1
+      return createImportedName(path, name)
+    }
+    importIndex += 1
+    return importedName
+  }
 
   const addDefinition = atRule => {
     let matches
     while ((matches = matchValueDefinition.exec(atRule.params))) {
       let [, key, value] = matches
       // Add to the definitions, knowing that values can refer to each other
-      definitions[key] = replaceAll(definitions, value)
+      icssExports[key] = replaceValueSymbols(value, icssExports)
       atRule.remove()
     }
   }
@@ -67,16 +45,16 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
     if (matches) {
       let [, aliasesString, path] = matches
       // We can use constants for path names
-      if (definitions[path]) path = definitions[path]
+      if (icssExports[path]) path = icssExports[path]
       let aliases = aliasesString
         .replace(/^\(\s*([\s\S]+)\s*\)$/, '$1')
         .split(/\s*,\s*/)
         .map(alias => {
           let tokens = matchImport.exec(alias)
           if (tokens) {
-            let [, /*match*/ theirName, myName = theirName] = tokens
-            let importedName = createImportedName(myName)
-            definitions[myName] = importedName
+            let [, theirName, myName = theirName] = tokens
+            let importedName = createImportedName(path, myName)
+            icssExports[myName] = importedName
             return { theirName, importedName }
           } else {
             throw new Error(`@import statement "${alias}" is invalid!`)
@@ -86,7 +64,7 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
           acc[importedName] = theirName
           return acc
         }, {})
-      importAliases.push({ path, aliases })
+      icssImports[path] = Object.assign({}, icssImports[path], aliases)
       atRule.remove()
     }
   }
@@ -104,13 +82,9 @@ module.exports = postcss.plugin('postcss-modules-values', () => (
     }
   })
 
-  /* If we have no definitions, don't continue */
-  if (Object.keys(definitions).length === 0) return
+  if (Object.keys(icssExports).length === 0) return
 
-  /* Perform replacements */
-  replaceSymbols(css, definitions)
+  replaceSymbols(css, icssExports)
 
-  addExportsRule(css, definitions)
-
-  addImportsRules(css, importAliases)
+  css.prepend(createICSSRules(icssImports, icssExports))
 })
