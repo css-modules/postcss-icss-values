@@ -13,7 +13,6 @@ const matchImports = /^(.+?|\([\s\S]+?\))\s+from\s+("[^"]*"|'[^']*'|[\w-]+)$/;
 const matchValueDefinition = /(?:\s+|^)([\w-]+):?\s+(.+?)\s*$/g;
 const matchImport = /^([\w-]+)(?:\s+as\s+([\w-]+))?/;
 
-// 'i' prefix to prevent postcss parsing "_" as css hook
 const getAliasName = (name, index) =>
   `__value__${name.replace(/\W/g, "_")}__${index}`;
 
