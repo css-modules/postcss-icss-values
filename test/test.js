@@ -4,97 +4,92 @@ const stripIndent = require("strip-indent");
 const plugin = require("../src");
 
 const strip = input => stripIndent(input).trim();
-const compile = input => postcss([plugin]).process(strip(input));
-const runCSS = input => compile(input).then(result => result.css);
-const runWarnings = input =>
-  compile(input)
-    .then(result => result.warnings())
-    .then(warnings => warnings.map(warning => warning.text));
 
-const run = ({ fixture, expected }) =>
+const compile = input => postcss([plugin]).process(strip(input));
+
+const getWarnings = result => result.warnings().map(warning => warning.text);
+
+const run = ({ fixture, expected, warnings = [] }) =>
   compile(fixture).then(result => {
-    expect(result.css.trim()).toEqual(strip(expected));
+    expect(getWarnings(result)).toEqual(warnings);
+    if (expected) {
+      expect(result.css.trim()).toEqual(strip(expected));
+    }
   });
 
-test("should export a constant", () => {
-  return expect(
-    runCSS(`
+test("export a constant", () => {
+  return run({
+    fixture: `
       @value red blue;@value red blue;
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :export {
         red: blue
       }
-    `)
-  );
+    `
+  });
 });
 
-test("gives an error when there is no semicolon between lines", () => {
-  return expect(
-    runWarnings(`
+test("warn when there is no semicolon between lines", () => {
+  return run({
+    fixture: `
       @value red blue
       @value green yellow
-    `)
-  ).resolves.toEqual([
-    "Invalid value definition: red blue\n@value green yellow"
-  ]);
+    `,
+    warnings: ["Invalid value definition: red blue\n@value green yellow"]
+  });
 });
 
-test("should export a more complex constant", () => {
-  return expect(
-    runCSS(`
+test("export a more complex constant", () => {
+  return run({
+    fixture: `
       @value small (max-width: 599px);
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :export {
         small: (max-width: 599px)
       }
-    `)
-  );
+    `
+  });
 });
 
-test("should replace constants within the file", () => {
-  return expect(
-    runCSS(`
+test("replace constants within the file", () => {
+  return run({
+    fixture: `
       @value blue red; .foo { color: blue; }
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :export {
         blue: red;
       }
       .foo { color: red; }
-    `)
-  );
+    `
+  });
 });
 
-test("should import and re-export a simple constant", () => {
-  return expect(
-    runCSS(`
+test("import and re-export a simple constant", () => {
+  return run({
+    fixture: `
       @value red from "./colors.css";
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :import('./colors.css') {
         __value__red__0: red
       }
       :export {
         red: __value__red__0
       }
-    `)
-  );
+    `
+  });
 });
 
-test("should import a simple constant and replace usages", () => {
-  return expect(
-    runCSS(`
+test("import a simple constant and replace usages", () => {
+  return run({
+    fixture: `
       @value red from "./colors.css";
       .foo { color: red; }
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :import('./colors.css') {
         __value__red__0: red;
       }
@@ -102,18 +97,17 @@ test("should import a simple constant and replace usages", () => {
         red: __value__red__0;
       }
       .foo { color: __value__red__0; }
-    `)
-  );
+    `
+  });
 });
 
-test("should import and alias a constant and replace usages", () => {
-  return expect(
-    runCSS(`
+test("import and alias a constant and replace usages", () => {
+  return run({
+    fixture: `
       @value blue as red from "./colors.css";
       .foo { color: red; }
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :import('./colors.css') {
         __value__red__0: blue;
       }
@@ -121,19 +115,18 @@ test("should import and alias a constant and replace usages", () => {
         red: __value__red__0;
       }
       .foo { color: __value__red__0; }
-    `)
-  );
+    `
+  });
 });
 
-test("should import multiple from a single file", () => {
-  return expect(
-    runCSS(`
+test("import multiple from a single file", () => {
+  return run({
+    fixture: `
       @value blue, red from "./colors.css";
       .foo { color: red; }
       .bar { color: blue }
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :import('./colors.css') {
         __value__blue__0: blue;
         __value__red__1: red;
@@ -144,17 +137,16 @@ test("should import multiple from a single file", () => {
       }
       .foo { color: __value__red__1; }
       .bar { color: __value__blue__0 }
-    `)
-  );
+    `
+  });
 });
 
 test("not import from a definition", () => {
-  return expect(
-    runCSS(`
+  return run({
+    fixture: `
       @value colors: "./colors.css"; @value red from colors;
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :import('colors') {
         __value__red__0: red
       }
@@ -162,53 +154,50 @@ test("not import from a definition", () => {
         colors: "./colors.css";
         red: __value__red__0
       }
-    `)
-  );
+    `
+  });
 });
 
-test("should allow transitive values", () => {
-  return expect(
-    runCSS(`
+test("allow transitive values", () => {
+  return run({
+    fixture: `
       @value aaa: red;
       @value bbb: aaa;
       .a { color: bbb; }
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :export {
         aaa: red;
         bbb: red;
       }
       .a { color: red; }
-    `)
-  );
+    `
+  });
 });
 
-test("should allow transitive values within calc", () => {
-  return expect(
-    runCSS(`
+test("allow transitive values within calc", () => {
+  return run({
+    fixture: `
       @value base: 10px;
       @value large: calc(base * 2);
       .a { margin: large; }
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :export {
         base: 10px;
         large: calc(10px * 2);
       }
       .a { margin: calc(10px * 2); }
-    `)
-  );
+    `
+  });
 });
 
-test("should preserve import order", () => {
-  return expect(
-    runCSS(`
+test("preserve import order", () => {
+  return run({
+    fixture: `
       @value a from "./a.css"; @value b from "./b.css";
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :import('./a.css') {
         __value__a__0: a
       }
@@ -219,17 +208,16 @@ test("should preserve import order", () => {
         a: __value__a__0;
         b: __value__b__1
       }
-    `)
-  );
+    `
+  });
 });
 
-test("should allow custom-property-style names", () => {
-  return expect(
-    runCSS(`
+test("allow custom-property-style names", () => {
+  return run({
+    fixture: `
       @value --red from "./colors.css"; .foo { color: --red; }
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :import('./colors.css') {
         __value____red__0: --red;
       }
@@ -237,13 +225,13 @@ test("should allow custom-property-style names", () => {
         --red: __value____red__0;
       }
       .foo { color: __value____red__0; }
-    `)
-  );
+    `
+  });
 });
 
-test("should allow all colour types", () => {
-  return expect(
-    runCSS(`
+test("allow all colour types", () => {
+  return run({
+    fixture: `
       @value named: red;
       @value 3char #0f0;
       @value 6char #00ff00;
@@ -256,9 +244,8 @@ test("should allow all colour types", () => {
         border-bottom-color: rgba;
         outline-color: hsla;
       }
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :export {
         named: red;
         3char: #0f0;
@@ -273,22 +260,21 @@ test("should allow all colour types", () => {
         border-bottom-color: rgba(34, 12, 64, 0.3);
         outline-color: hsla(220, 13.0%, 18.0%, 1);
       }
-    `)
-  );
+    `
+  });
 });
 
-test("should import multiple from a single file on multiple lines", () => {
-  return expect(
-    runCSS(`
+test("import multiple from a single file on multiple lines", () => {
+  return run({
+    fixture: `
       @value (
         blue,
         red
       ) from "./colors.css";
       .foo { color: red; }
       .bar { color: blue }
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :import('./colors.css') {
         __value__blue__0: blue;
         __value__red__1: red;
@@ -299,43 +285,41 @@ test("should import multiple from a single file on multiple lines", () => {
       }
       .foo { color: __value__red__1; }
       .bar { color: __value__blue__0 }
-    `)
-  );
+    `
+  });
 });
 
-test("should allow definitions with commas in them", () => {
-  return expect(
-    runCSS(`
+test("allow definitions with commas in them", () => {
+  return run({
+    fixture: `
       @value coolShadow: 0 11px 15px -7px rgba(0,0,0,.2),0 24px 38px 3px rgba(0,0,0,.14)   ;
       .foo { box-shadow: coolShadow; }
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :export {
         coolShadow: 0 11px 15px -7px rgba(0,0,0,.2),0 24px 38px 3px rgba(0,0,0,.14);
       }
       .foo { box-shadow: 0 11px 15px -7px rgba(0,0,0,.2),0 24px 38px 3px rgba(0,0,0,.14); }
-    `)
-  );
+    `
+  });
 });
 
-test("should allow values with nested parantheses", () => {
-  return expect(
-    runCSS(`
+test("allow values with nested parantheses", () => {
+  return run({
+    fixture: `
       @value aaa: color(red lightness(50%));
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :export {
         aaa: color(red lightness(50%))
       }
-    `)
-  );
+    `
+  });
 });
 
 test("reuse existing :import with same name and :export", () => {
-  return expect(
-    runCSS(`
+  return run({
+    fixture: `
       :import('./colors.css') {
         i__some_import: blue;
       }
@@ -343,9 +327,8 @@ test("reuse existing :import with same name and :export", () => {
         b: i__c;
       }
       @value a from './colors.css';
-    `)
-  ).resolves.toEqual(
-    strip(`
+    `,
+    expected: `
       :import('./colors.css') {
         i__some_import: blue;
         __value__a__0: a
@@ -354,8 +337,8 @@ test("reuse existing :import with same name and :export", () => {
         b: i__c;
         a: __value__a__0
       }
-    `)
-  );
+    `
+  });
 });
 
 test("save :import and :export statements", () => {
