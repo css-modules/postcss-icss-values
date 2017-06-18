@@ -1,7 +1,7 @@
 /* eslint-env jest */
-const postcss = require("postcss");
-const stripIndent = require("strip-indent");
-const plugin = require("../src");
+import postcss from "postcss";
+import stripIndent from "strip-indent";
+import plugin from "../src";
 
 const strip = input => stripIndent(input).trim();
 
