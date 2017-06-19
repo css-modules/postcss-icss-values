@@ -17,14 +17,16 @@ const run = ({ fixture, expected, warnings = [] }) =>
     }
   });
 
-test("export a constant", () => {
+test("export value", () => {
   return run({
     fixture: `
-      @value red blue;@value red blue;
+      @value red 1px solid #f00;
+      @value blue: 1px solid #00f;
     `,
     expected: `
       :export {
-        red: blue
+        red: 1px solid #f00;
+        blue: 1px solid #00f
       }
     `
   });
@@ -36,41 +38,34 @@ test("warn when there is no semicolon between lines", () => {
       @value red blue
       @value green yellow
     `,
-    warnings: ["Invalid value definition: red blue\n@value green yellow"]
+    warnings: [`Invalid value definition "red blue\n@value green yellow"`]
   });
 });
 
-test("export a more complex constant", () => {
+test("replace values within the file", () => {
   return run({
     fixture: `
-      @value small (max-width: 599px);
+      @value blue red;
+      @media blue {
+        .blue { color: blue }
+      }
     `,
     expected: `
       :export {
-        small: (max-width: 599px)
+        blue: red
+      }
+      @media red {
+        .red { color: red }
       }
     `
   });
 });
 
-test("replace constants within the file", () => {
-  return run({
-    fixture: `
-      @value blue red; .foo { color: blue; }
-    `,
-    expected: `
-      :export {
-        blue: red;
-      }
-      .foo { color: red; }
-    `
-  });
-});
-
-test("import and re-export a simple constant", () => {
+test("import external values", () => {
   return run({
     fixture: `
       @value red from "./colors.css";
+      .foo { color: red }
     `,
     expected: `
       :import('./colors.css') {
@@ -79,82 +74,80 @@ test("import and re-export a simple constant", () => {
       :export {
         red: __value__red__0
       }
+      .foo { color: __value__red__0 }
     `
   });
 });
 
-test("import a simple constant and replace usages", () => {
+test("import multiple external values", () => {
   return run({
     fixture: `
-      @value red from "./colors.css";
-      .foo { color: red; }
+      @value red, blue from 'path1';
+      @value green, yellow from 'path2';
     `,
     expected: `
-      :import('./colors.css') {
+      :import('path1') {
         __value__red__0: red;
+        __value__blue__1: blue
+      }
+      :import('path2') {
+        __value__green__2: green;
+        __value__yellow__3: yellow
       }
       :export {
         red: __value__red__0;
+        blue: __value__blue__1;
+        green: __value__green__2;
+        yellow: __value__yellow__3
       }
-      .foo { color: __value__red__0; }
     `
   });
 });
 
-test("import and alias a constant and replace usages", () => {
+test("import external values with aliases", () => {
   return run({
     fixture: `
-      @value blue as red from "./colors.css";
-      .foo { color: red; }
+      @value red as red1, blue as blue1 from 'path';
+      .foo { color: red1; background: blue }
     `,
     expected: `
-      :import('./colors.css') {
-        __value__red__0: blue;
+      :import('path') {
+        __value__red1__0: red;
+        __value__blue1__1: blue
       }
       :export {
-        red: __value__red__0;
+        red1: __value__red1__0;
+        blue1: __value__blue1__1
       }
-      .foo { color: __value__red__0; }
+      .foo { color: __value__red1__0; background: blue }
     `
   });
 });
 
-test("import multiple from a single file", () => {
+test("warn on unexpected value defintion or import", () => {
   return run({
     fixture: `
-      @value blue, red from "./colors.css";
-      .foo { color: red; }
-      .bar { color: blue }
+      @value red;
+      @value red: ;
+      @value red from;
+      @value red blue from 'path';
+      @value red from global;
+      @value red from 'path' token;
+      @value red as 'blue' from 'path';
+      @value 'red' as blue from 'path';
+      @value red 'as' blue from 'path';
     `,
-    expected: `
-      :import('./colors.css') {
-        __value__blue__0: blue;
-        __value__red__1: red;
-      }
-      :export {
-        blue: __value__blue__0;
-        red: __value__red__1;
-      }
-      .foo { color: __value__red__1; }
-      .bar { color: __value__blue__0 }
-    `
-  });
-});
-
-test("not import from a definition", () => {
-  return run({
-    fixture: `
-      @value colors: "./colors.css"; @value red from colors;
-    `,
-    expected: `
-      :import('colors') {
-        __value__red__0: red
-      }
-      :export {
-        colors: "./colors.css";
-        red: __value__red__0
-      }
-    `
+    warnings: [
+      `Invalid value definition "red"`,
+      `Invalid value definition "red:"`,
+      `Invalid value definition "red from"`,
+      `Invalid value definition "red blue from 'path'"`,
+      `Invalid value definition "red from global"`,
+      `Invalid value definition "red from 'path' token"`,
+      `Invalid value definition "red as 'blue' from 'path'"`,
+      `Invalid value definition "'red' as blue from 'path'"`,
+      `Invalid value definition "red 'as' blue from 'path'"`
+    ]
   });
 });
 
@@ -188,26 +181,6 @@ test("allow transitive values within calc", () => {
         large: calc(10px * 2);
       }
       .a { margin: calc(10px * 2); }
-    `
-  });
-});
-
-test("preserve import order", () => {
-  return run({
-    fixture: `
-      @value a from "./a.css"; @value b from "./b.css";
-    `,
-    expected: `
-      :import('./a.css') {
-        __value__a__0: a
-      }
-      :import('./b.css') {
-        __value__b__1: b
-      }
-      :export {
-        a: __value__a__0;
-        b: __value__b__1
-      }
     `
   });
 });
@@ -264,18 +237,18 @@ test("allow all colour types", () => {
   });
 });
 
-test("import multiple from a single file on multiple lines", () => {
+test("import multiple values grouped with parentheses on multiple lines", () => {
   return run({
     fixture: `
       @value (
         blue,
         red
-      ) from "./colors.css";
+      ) from "path";
       .foo { color: red; }
       .bar { color: blue }
     `,
     expected: `
-      :import('./colors.css') {
+      :import('path') {
         __value__blue__0: blue;
         __value__red__1: red;
       }
@@ -304,16 +277,24 @@ test("allow definitions with commas in them", () => {
   });
 });
 
-test("allow values with nested parantheses", () => {
+test("warn if value already declared and override result", () => {
   return run({
     fixture: `
-      @value aaa: color(red lightness(50%));
+      @value red: blue;
+      @value red: green;
+      @value red from 'path';
+      .foo { color: red }
     `,
     expected: `
-      :export {
-        aaa: color(red lightness(50%))
+      :import('path') {
+        __value__red__0: red
       }
-    `
+      :export {
+        red: __value__red__0
+      }
+      .foo { color: __value__red__0 }
+    `,
+    warnings: [`"red" value already declared`, `"red" value already declared`]
   });
 });
 

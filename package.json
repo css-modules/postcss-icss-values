@@ -68,6 +68,8 @@
   },
   "dependencies": {
     "icss-utils": "^3.0.1",
-    "postcss": "^6.0.2"
+    "lodash": "^4.17.4",
+    "postcss": "^6.0.2",
+    "postcss-value-parser": "^3.3.0"
   }
 }
