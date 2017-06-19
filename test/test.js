@@ -351,6 +351,16 @@ test("warn on using dot or hash in value name", () => {
       #blue {}
     `,
     expected: `
+      :import('path') {
+        __value___red__0: .red;
+        __value___blue__1: #blue
+      }
+      :export {
+        colors.red: #f00;
+        colors#blue: #00f;
+        .red: __value___red__0;
+        #blue: __value___blue__1
+      }
       .foo { color: colors.red; background: colors#blue }
       .red {}
       #blue {}

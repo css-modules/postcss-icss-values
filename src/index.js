@@ -101,68 +101,51 @@ const createGenerator = (i = 0) => name =>
 module.exports = postcss.plugin(plugin, () => (css, result) => {
   const { icssImports, icssExports } = extractICSS(css);
   const getAliasName = createGenerator();
-
-  css.walkAtRules("value", atRule => {
-    if (atRule.params.indexOf("@value") !== -1) {
-      result.warn(`Invalid value definition "${atRule.params}"`, {
-        node: atRule
+  const addExports = (node, name, value) => {
+    if (isForbidden(name)) {
+      result.warn(`Dot and hash symbols are not allowed in value "${name}"`, {
+        node
       });
     } else {
-      const parsed = parse(atRule.params);
+      if (icssExports[name]) {
+        result.warn(`"${name}" value already declared`, { node });
+      }
+    }
+    icssExports[name] = replaceValueSymbols(value, icssExports);
+  };
+
+  css.walkAtRules("value", atrule => {
+    if (atrule.params.indexOf("@value") !== -1) {
+      result.warn(`Invalid value definition "${atrule.params}"`, {
+        node: atrule
+      });
+    } else {
+      const parsed = parse(atrule.params);
       if (parsed) {
         if (parsed.type === "value") {
           const { name, value } = parsed;
-          if (isForbidden(name)) {
-            result.warn(
-              `Dot and hash symbols are not allowed in value "${name}"`,
-              { node: atRule }
-            );
-          } else {
-            if (icssExports[name]) {
-              result.warn(`"${name}" value already declared`, {
-                node: atRule
-              });
-            }
-            icssExports[name] = replaceValueSymbols(value, icssExports);
-          }
+          addExports(atrule, name, value);
         }
         if (parsed.type === "import") {
-          const pairs = parsed.pairs
-            .filter(([, local]) => {
-              if (isForbidden(local)) {
-                result.warn(
-                  `Dot and hash symbols are not allowed in value "${local}"`
-                );
-                return false;
-              }
-              return true;
-            })
-            .map(([imported, local]) => {
-              const alias = getAliasName(local);
-              if (icssExports[local]) {
-                result.warn(`"${local}" value already declared`, {
-                  node: atRule
-                });
-              }
-              icssExports[local] = alias;
-              return [alias, imported];
-            });
-          if (pairs.length) {
-            const aliases = fromPairs(pairs);
-            icssImports[parsed.path] = Object.assign(
-              {},
-              icssImports[parsed.path],
-              aliases
-            );
-          }
+          const pairs = parsed.pairs.map(([imported, local]) => {
+            const alias = getAliasName(local);
+            addExports(atrule, local, alias);
+            return [alias, imported];
+          });
+          const aliases = fromPairs(pairs);
+          icssImports[parsed.path] = Object.assign(
+            {},
+            icssImports[parsed.path],
+            aliases
+          );
         }
       } else {
-        result.warn(`Invalid value definition "${atRule.params}"`, {
-          node: atRule
+        result.warn(`Invalid value definition "${atrule.params}"`, {
+          node: atrule
         });
       }
     }
-    atRule.remove();
+    atrule.remove();
   });
 
   replaceSymbols(css, icssExports);
