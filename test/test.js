@@ -12,9 +12,7 @@ const getWarnings = result => result.warnings().map(warning => warning.text);
 const run = ({ fixture, expected, warnings = [] }) =>
   compile(fixture).then(result => {
     expect(getWarnings(result)).toEqual(warnings);
-    if (expected) {
-      expect(result.css.trim()).toEqual(strip(expected));
-    }
+    expect(result.css.trim()).toEqual(strip(expected));
   });
 
 test("export value", () => {
@@ -38,6 +36,7 @@ test("warn when there is no semicolon between lines", () => {
       @value red blue
       @value green yellow
     `,
+    expected: "",
     warnings: [`Invalid value definition "red blue\n@value green yellow"`]
   });
 });
@@ -124,6 +123,31 @@ test("import external values with aliases", () => {
   });
 });
 
+test("import multiple values grouped with parentheses on multiple lines", () => {
+  return run({
+    fixture: `
+      @value (
+        blue,
+        red
+      ) from "path";
+      .foo { color: red; }
+      .bar { color: blue }
+    `,
+    expected: `
+      :import('path') {
+        __value__blue__0: blue;
+        __value__red__1: red;
+      }
+      :export {
+        blue: __value__blue__0;
+        red: __value__red__1;
+      }
+      .foo { color: __value__red__1; }
+      .bar { color: __value__blue__0 }
+    `
+  });
+});
+
 test("warn on unexpected value defintion or import", () => {
   return run({
     fixture: `
@@ -136,7 +160,9 @@ test("warn on unexpected value defintion or import", () => {
       @value red as 'blue' from 'path';
       @value 'red' as blue from 'path';
       @value red 'as' blue from 'path';
+      @value fn(red, blue) from 'path';
     `,
+    expected: "",
     warnings: [
       `Invalid value definition "red"`,
       `Invalid value definition "red:"`,
@@ -146,7 +172,8 @@ test("warn on unexpected value defintion or import", () => {
       `Invalid value definition "red from 'path' token"`,
       `Invalid value definition "red as 'blue' from 'path'"`,
       `Invalid value definition "'red' as blue from 'path'"`,
-      `Invalid value definition "red 'as' blue from 'path'"`
+      `Invalid value definition "red 'as' blue from 'path'"`,
+      `Invalid value definition "fn(red, blue) from 'path'"`
     ]
   });
 });
@@ -233,31 +260,6 @@ test("allow all colour types", () => {
         border-bottom-color: rgba(34, 12, 64, 0.3);
         outline-color: hsla(220, 13.0%, 18.0%, 1);
       }
-    `
-  });
-});
-
-test("import multiple values grouped with parentheses on multiple lines", () => {
-  return run({
-    fixture: `
-      @value (
-        blue,
-        red
-      ) from "path";
-      .foo { color: red; }
-      .bar { color: blue }
-    `,
-    expected: `
-      :import('path') {
-        __value__blue__0: blue;
-        __value__red__1: red;
-      }
-      :export {
-        blue: __value__blue__0;
-        red: __value__red__1;
-      }
-      .foo { color: __value__red__1; }
-      .bar { color: __value__blue__0 }
     `
   });
 });

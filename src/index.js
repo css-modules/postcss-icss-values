@@ -46,13 +46,15 @@ const trimNodes = nodes => dropWhile(dropRightWhile(nodes, isSpace), isSpace);
 const getPathValue = nodes =>
   nodes.length === 1 && nodes[0].type === "string" ? nodes[0].value : null;
 
-const ensurePairsList = valuesNodes =>
-  valuesNodes.length === 1 && valuesNodes[0].type === "function"
+const expandValuesParentheses = valuesNodes =>
+  valuesNodes.length === 1 &&
+    valuesNodes[0].type === "function" &&
+    valuesNodes[0].value === ""
     ? valuesNodes[0].nodes
     : valuesNodes;
 
 const getAliasesPairs = valuesNodes =>
-  chunkBy(ensurePairsList(valuesNodes), isComma).map(pairNodes => {
+  chunkBy(expandValuesParentheses(valuesNodes), isComma).map(pairNodes => {
     const nodes = pairNodes.filter(isNotSpace);
     if (nodes.length === 1 && isWord(nodes[0])) {
       return [nodes[0].value, nodes[0].value];
