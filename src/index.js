@@ -46,12 +46,10 @@ const trimNodes = nodes => dropWhile(dropRightWhile(nodes, isSpace), isSpace);
 const getPathValue = nodes =>
   nodes.length === 1 && nodes[0].type === "string" ? nodes[0].value : null;
 
-const expandValuesParentheses = valuesNodes =>
-  valuesNodes.length === 1 &&
-    valuesNodes[0].type === "function" &&
-    valuesNodes[0].value === ""
-    ? valuesNodes[0].nodes
-    : valuesNodes;
+const expandValuesParentheses = nodes =>
+  nodes.length === 1 && nodes[0].type === "function" && nodes[0].value === ""
+    ? nodes[0].nodes
+    : nodes;
 
 const getAliasesPairs = valuesNodes =>
   chunkBy(expandValuesParentheses(valuesNodes), isComma).map(pairNodes => {
@@ -95,19 +93,14 @@ const parse = value => {
   return null;
 };
 
-const getAliasName = (name, index) =>
-  `__value__${name.replace(/\W/g, "_")}__${index}`;
+const isForbidden = name => name.includes(".") || name.includes("#");
 
-// TODO forbig '.' and '#' in names
+const createGenerator = (i = 0) => name =>
+  `__value__${name.replace(/\W/g, "_")}__${i++}`;
 
 module.exports = postcss.plugin(plugin, () => (css, result) => {
   const { icssImports, icssExports } = extractICSS(css);
-  let importIndex = 0;
-  const createImportedName = (path, name) => {
-    const importedName = getAliasName(name, importIndex);
-    importIndex += 1;
-    return importedName;
-  };
+  const getAliasName = createGenerator();
 
   css.walkAtRules("value", atRule => {
     if (atRule.params.indexOf("@value") !== -1) {
@@ -118,33 +111,50 @@ module.exports = postcss.plugin(plugin, () => (css, result) => {
       const parsed = parse(atRule.params);
       if (parsed) {
         if (parsed.type === "value") {
-          if (icssExports[parsed.name]) {
-            result.warn(`"${parsed.name}" value already declared`, {
-              node: atRule
-            });
-          }
-          icssExports[parsed.name] = replaceValueSymbols(
-            parsed.value,
-            icssExports
-          );
-        }
-        if (parsed.type === "import") {
-          const pairs = parsed.pairs.map(([key, value]) => {
-            let importedName = createImportedName(parsed.path, value);
-            if (icssExports[value]) {
-              result.warn(`"${value}" value already declared`, {
+          const { name, value } = parsed;
+          if (isForbidden(name)) {
+            result.warn(
+              `Dot and hash symbols are not allowed in value "${name}"`,
+              { node: atRule }
+            );
+          } else {
+            if (icssExports[name]) {
+              result.warn(`"${name}" value already declared`, {
                 node: atRule
               });
             }
-            icssExports[value] = importedName;
-            return [importedName, key];
-          });
-          const aliases = fromPairs(pairs);
-          icssImports[parsed.path] = Object.assign(
-            {},
-            icssImports[parsed.path],
-            aliases
-          );
+            icssExports[name] = replaceValueSymbols(value, icssExports);
+          }
+        }
+        if (parsed.type === "import") {
+          const pairs = parsed.pairs
+            .filter(([, local]) => {
+              if (isForbidden(local)) {
+                result.warn(
+                  `Dot and hash symbols are not allowed in value "${local}"`
+                );
+                return false;
+              }
+              return true;
+            })
+            .map(([imported, local]) => {
+              const alias = getAliasName(local);
+              if (icssExports[local]) {
+                result.warn(`"${local}" value already declared`, {
+                  node: atRule
+                });
+              }
+              icssExports[local] = alias;
+              return [alias, imported];
+            });
+          if (pairs.length) {
+            const aliases = fromPairs(pairs);
+            icssImports[parsed.path] = Object.assign(
+              {},
+              icssImports[parsed.path],
+              aliases
+            );
+          }
         }
       } else {
         result.warn(`Invalid value definition "${atRule.params}"`, {

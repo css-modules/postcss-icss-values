@@ -338,3 +338,28 @@ test("save :import and :export statements", () => {
     expected: input
   });
 });
+
+test("warn on using dot or hash in value name", () => {
+  return run({
+    fixture: `
+      @value colors.red #f00;
+      @value colors#blue #00f;
+      @value .red from 'path';
+      @value #blue from 'path';
+      .foo { color: colors.red; background: colors#blue }
+      .red {}
+      #blue {}
+    `,
+    expected: `
+      .foo { color: colors.red; background: colors#blue }
+      .red {}
+      #blue {}
+    `,
+    warnings: [
+      `Dot and hash symbols are not allowed in value "colors.red"`,
+      `Dot and hash symbols are not allowed in value "colors#blue"`,
+      `Dot and hash symbols are not allowed in value ".red"`,
+      `Dot and hash symbols are not allowed in value "#blue"`
+    ]
+  });
+});
