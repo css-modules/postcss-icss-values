@@ -1,67 +1,41 @@
-# CSS Modules: Values
+# postcss-icss-values [![Build Status][travis-img]][travis]
 
-Pass arbitrary values between your module files, transforms
+[PostCSS]: https://github.com/postcss/postcss
+[travis-img]: https://travis-ci.org/css-modules/postcss-icss-selectors.svg
+[travis]: https://travis-ci.org/css-modules/postcss-icss-selectors
 
-```css
-@value primary: #BF4040;
-@value secondary: #1F4F7F;
+PostCSS plugin for css modules to pass arbitrary values between your module files.
+
+## Usage
+
+```js
+postcss([ require('postcss-icss-values') ])
 ```
 
-into
+See [PostCSS] docs for examples for your environment.
 
-```css
-:export {
-  primary: #BF4040;
-  secondary: #1F4F7F;
-}
-```
-
-### Usage
+### Export value
 
 ```css
 /* colors.css */
+
 @value primary: #BF4040;
-@value secondary: #1F4F7F;
+/* or without colon for preprocessors */
+@value secondary #1F4F7F;
 
-.text-primary {
-  color: primary;
+.panel {
+  background: primary;
 }
 
-.text-secondary {
-  color: secondary;
-}
-```
+/* transforms to */
 
-```css
-/* breakpoints.css */
-@value small: (max-width: 599px);
-@value medium: (min-width: 600px) and (max-width: 959px);
-@value large: (min-width: 960px);
-```
-
-```css
-/* my-component.css */
-/* alias paths for other values or composition */
-@value colors: "./colors.css"; 
-/* import multiple from a single file */
-@value primary, secondary from colors;
-/* make local aliases to imported values */
-@value small as bp-small, large as bp-large from "./breakpoints.css";
-
-.header {
-  composes: text-primary from colors;
-  box-shadow: 0 0 10px secondary;
+:export {
+  primary: #BF4040;
+  secondary: #1F4F7F
 }
 
-@media bp-small {
-  .header {
-    box-shadow: 0 0 4px secondary;
-  }
-}
-@media bp-large {
-  .header {
-    box-shadow: 0 0 20px secondary;
-  }
+.panel {
+  background: #BF4040;
 }
 ```
 
@@ -73,19 +47,61 @@ Note also you can _import_ multiple values at once but can only _define_ one val
 @value a: b, c: d; /* defines a as "b, c: d" */
 ```
 
-### Justification
+### Importing value
+
+```css
+@value primary, secondary from './colors.css';
+
+.panel {
+  background: secondary;
+}
+
+/* transforms to similar exports */
+
+:import('./colors.css') {
+  __value__primary__0: primary;
+  __value__secondary__1: secondary
+}
+:export {
+  primary: __value__primary__0; /* this long names will be mapped to imports by your loader */
+  secondary: __value__secondary__1
+}
+
+.panel {
+  background: __value__secondary__1;
+}
+```
+
+### Importing value in JS
+
+```css
+import { primary } from './colors.css';
+// will have similar effect
+console.log(primary); // -> #BF4040
+```
+
+### Aliases
+
+Do not conflict between names you are able to import values with aliases
+
+```css
+@value small as bp-small, large as bp-large from './breakpoints.css';
+@value (
+  small as t-small,
+  large as t-large
+) from './typo.css';
+
+@media bp-small {
+  .foo {
+    font-size: t-small;
+  }
+}
+```
+
+## Justification
 
 See [this PR](https://github.com/css-modules/css-modules-loader-core/pull/28) for more background
 
 ## License
 
-ISC
-
-## With thanks
-
-- Mark Dalgleish
-- Tobias Koppers
-- Josh Johnston
-
----
-Glen Maddern, 2015.
+MIT © Glen Maddern and Bogdan Chadkin, 2015
