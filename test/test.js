@@ -5,15 +5,25 @@ import plugin from "../src";
 
 const strip = input => stripIndent(input).trim();
 
-const compile = input => postcss([plugin]).process(strip(input));
+const messagesPlugin = messages => (css, result) =>
+  result.messages.push(...messages);
+
+const compile = (input, messages) =>
+  postcss([messagesPlugin(messages), plugin]).process(strip(input));
 
 const getWarnings = result => result.warnings().map(warning => warning.text);
 
 const getMessages = result =>
   result.messages.filter(msg => msg.type !== "warning");
 
-const run = ({ fixture, expected, warnings = [], messages = [] }) =>
-  compile(fixture).then(result => {
+const run = ({
+  fixture,
+  expected,
+  warnings = [],
+  inputMessages = [],
+  messages = []
+}) =>
+  compile(fixture, inputMessages).then(result => {
     expect(result.css.trim()).toEqual(strip(expected));
     expect(getWarnings(result)).toEqual(warnings);
     expect(getMessages(result)).toEqual(messages);
@@ -426,5 +436,31 @@ test("warn on using dot or hash in value name", () => {
       getMsg(".red", "__value___red__0"),
       getMsg("#blue", "__value___blue__1")
     ]
+  });
+});
+
+test("icss-scoped contract", () => {
+  const inputMessages = [
+    { type: "icss-scoped", name: "a", value: "__scope__a" }
+  ];
+  return run({
+    fixture: `
+      :export {
+        a: __scope__a
+      }
+      @value a from 'path';
+      .__scope__a {}
+    `,
+    inputMessages,
+    expected: `
+      :import('path') {
+        __value__a__0: a
+      }
+      :export {
+        a: __value__a__0
+      }
+      .__value__a__0 {}
+    `,
+    messages: [...inputMessages, getMsg("a", "__value__a__0")]
   });
 });

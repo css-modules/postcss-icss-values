@@ -98,6 +98,13 @@ const isForbidden = name => name.includes(".") || name.includes("#");
 const createGenerator = (i = 0) => name =>
   `__value__${name.replace(/\W/g, "_")}__${i++}`;
 
+const getScopedAliases = (messages, values) =>
+  fromPairs(
+    messages
+      .filter(msg => msg.type === "icss-scoped")
+      .map(msg => [msg.value, values[msg.name]])
+  );
+
 const getMessages = exports =>
   Object.keys(exports).map(name => ({
     plugin: "postcss-icss-values",
@@ -156,7 +163,14 @@ module.exports = postcss.plugin(plugin, () => (css, result) => {
     atrule.remove();
   });
 
-  replaceSymbols(css, valuesExports);
+  replaceSymbols(
+    css,
+    Object.assign(
+      {},
+      valuesExports,
+      getScopedAliases(result.messages, valuesExports)
+    )
+  );
 
   css.prepend(
     createICSSRules(icssImports, Object.assign({}, icssExports, valuesExports))
