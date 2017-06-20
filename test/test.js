@@ -446,7 +446,8 @@ test("icss-scoped contract", () => {
   return run({
     fixture: `
       :export {
-        a: __scope__a
+        a: __scope__a;
+        b: b __scope__a
       }
       @value a from 'path';
       .__scope__a {}
@@ -457,7 +458,8 @@ test("icss-scoped contract", () => {
         __value__a__0: a
       }
       :export {
-        a: __value__a__0
+        a: __value__a__0;
+        b: b __value__a__0
       }
       .__value__a__0 {}
     `,

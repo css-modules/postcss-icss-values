@@ -163,14 +163,13 @@ module.exports = postcss.plugin(plugin, () => (css, result) => {
     atrule.remove();
   });
 
-  replaceSymbols(
-    css,
-    Object.assign(
-      {},
-      valuesExports,
-      getScopedAliases(result.messages, valuesExports)
-    )
-  );
+  const scopedAliases = getScopedAliases(result.messages, valuesExports);
+
+  replaceSymbols(css, Object.assign({}, valuesExports, scopedAliases));
+
+  Object.keys(icssExports).forEach(key => {
+    icssExports[key] = replaceValueSymbols(icssExports[key], scopedAliases);
+  });
 
   css.prepend(
     createICSSRules(icssImports, Object.assign({}, icssExports, valuesExports))
