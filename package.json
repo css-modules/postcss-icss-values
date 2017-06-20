@@ -1,5 +1,5 @@
 {
-  "name": "postcss-modules-values",
+  "name": "postcss-icss-values",
   "version": "1.3.0",
   "description": "PostCSS plugin for CSS Modules to pass arbitrary values between your module files",
   "main": "lib/index.js",
@@ -40,21 +40,14 @@
       ]
     ]
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/css-modules/postcss-modules-values.git"
-  },
+  "repository": "css-modules/postcss-icss-values",
   "keywords": [
     "css",
     "modules",
     "postcss"
   ],
-  "author": "Glen Maddern",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/css-modules/postcss-modules-values/issues"
-  },
-  "homepage": "https://github.com/css-modules/postcss-modules-values#readme",
+  "author": "Glen Maddern and Bogdan Chadkin",
+  "license": "MIT",
   "devDependencies": {
     "babel-cli": "^6.5.2",
     "babel-jest": "^20.0.3",
