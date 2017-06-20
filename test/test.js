@@ -9,11 +9,22 @@ const compile = input => postcss([plugin]).process(strip(input));
 
 const getWarnings = result => result.warnings().map(warning => warning.text);
 
-const run = ({ fixture, expected, warnings = [] }) =>
+const getMessages = result =>
+  result.messages.filter(msg => msg.type !== "warning");
+
+const run = ({ fixture, expected, warnings = [], messages = [] }) =>
   compile(fixture).then(result => {
-    expect(getWarnings(result)).toEqual(warnings);
     expect(result.css.trim()).toEqual(strip(expected));
+    expect(getWarnings(result)).toEqual(warnings);
+    expect(getMessages(result)).toEqual(messages);
   });
+
+const getMsg = (name, value) => ({
+  plugin: "postcss-icss-values",
+  type: "icss-value",
+  name,
+  value
+});
 
 test("export value", () => {
   return run({
@@ -26,7 +37,11 @@ test("export value", () => {
         red: 1px solid #f00;
         blue: 1px solid #00f
       }
-    `
+    `,
+    messages: [
+      getMsg("red", "1px solid #f00"),
+      getMsg("blue", "1px solid #00f")
+    ]
   });
 });
 
@@ -56,7 +71,8 @@ test("replace values within the file", () => {
       @media red {
         .red { color: red }
       }
-    `
+    `,
+    messages: [getMsg("blue", "red")]
   });
 });
 
@@ -74,7 +90,8 @@ test("import external values", () => {
         red: __value__red__0
       }
       .foo { color: __value__red__0 }
-    `
+    `,
+    messages: [getMsg("red", "__value__red__0")]
   });
 });
 
@@ -99,7 +116,13 @@ test("import multiple external values", () => {
         green: __value__green__2;
         yellow: __value__yellow__3
       }
-    `
+    `,
+    messages: [
+      getMsg("red", "__value__red__0"),
+      getMsg("blue", "__value__blue__1"),
+      getMsg("green", "__value__green__2"),
+      getMsg("yellow", "__value__yellow__3")
+    ]
   });
 });
 
@@ -119,7 +142,11 @@ test("import external values with aliases", () => {
         blue1: __value__blue1__1
       }
       .foo { color: __value__red1__0; background: blue }
-    `
+    `,
+    messages: [
+      getMsg("red1", "__value__red1__0"),
+      getMsg("blue1", "__value__blue1__1")
+    ]
   });
 });
 
@@ -144,7 +171,11 @@ test("import multiple values grouped with parentheses on multiple lines", () => 
       }
       .foo { color: __value__red__1; }
       .bar { color: __value__blue__0 }
-    `
+    `,
+    messages: [
+      getMsg("blue", "__value__blue__0"),
+      getMsg("red", "__value__red__1")
+    ]
   });
 });
 
@@ -191,7 +222,8 @@ test("allow transitive values", () => {
         bbb: red;
       }
       .a { color: red; }
-    `
+    `,
+    messages: [getMsg("aaa", "red"), getMsg("bbb", "red")]
   });
 });
 
@@ -208,7 +240,8 @@ test("allow transitive values within calc", () => {
         large: calc(10px * 2);
       }
       .a { margin: calc(10px * 2); }
-    `
+    `,
+    messages: [getMsg("base", "10px"), getMsg("large", "calc(10px * 2)")]
   });
 });
 
@@ -225,7 +258,8 @@ test("allow custom-property-style names", () => {
         --red: __value____red__0;
       }
       .foo { color: __value____red__0; }
-    `
+    `,
+    messages: [getMsg("--red", "__value____red__0")]
   });
 });
 
@@ -260,7 +294,14 @@ test("allow all colour types", () => {
         border-bottom-color: rgba(34, 12, 64, 0.3);
         outline-color: hsla(220, 13.0%, 18.0%, 1);
       }
-    `
+    `,
+    messages: [
+      getMsg("named", "red"),
+      getMsg("3char", "#0f0"),
+      getMsg("6char", "#00ff00"),
+      getMsg("rgba", "rgba(34, 12, 64, 0.3)"),
+      getMsg("hsla", "hsla(220, 13.0%, 18.0%, 1)")
+    ]
   });
 });
 
@@ -275,7 +316,13 @@ test("allow definitions with commas in them", () => {
         coolShadow: 0 11px 15px -7px rgba(0,0,0,.2),0 24px 38px 3px rgba(0,0,0,.14);
       }
       .foo { box-shadow: 0 11px 15px -7px rgba(0,0,0,.2),0 24px 38px 3px rgba(0,0,0,.14); }
-    `
+    `,
+    messages: [
+      getMsg(
+        "coolShadow",
+        "0 11px 15px -7px rgba(0,0,0,.2),0 24px 38px 3px rgba(0,0,0,.14)"
+      )
+    ]
   });
 });
 
@@ -296,7 +343,8 @@ test("warn if value already declared and override result", () => {
       }
       .foo { color: __value__red__0 }
     `,
-    warnings: [`"red" value already declared`, `"red" value already declared`]
+    warnings: [`"red" value already declared`, `"red" value already declared`],
+    messages: [getMsg("red", "__value__red__0")]
   });
 });
 
@@ -320,7 +368,8 @@ test("reuse existing :import with same name and :export", () => {
         b: i__c;
         a: __value__a__0
       }
-    `
+    `,
+    messages: [getMsg("a", "__value__a__0")]
   });
 });
 
@@ -370,6 +419,12 @@ test("warn on using dot or hash in value name", () => {
       `Dot and hash symbols are not allowed in value "colors#blue"`,
       `Dot and hash symbols are not allowed in value ".red"`,
       `Dot and hash symbols are not allowed in value "#blue"`
+    ],
+    messages: [
+      getMsg("colors.red", "#f00"),
+      getMsg("colors#blue", "#00f"),
+      getMsg(".red", "__value___red__0"),
+      getMsg("#blue", "__value___blue__1")
     ]
   });
 });

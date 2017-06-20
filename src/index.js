@@ -98,20 +98,28 @@ const isForbidden = name => name.includes(".") || name.includes("#");
 const createGenerator = (i = 0) => name =>
   `__value__${name.replace(/\W/g, "_")}__${i++}`;
 
+const getMessages = exports =>
+  Object.keys(exports).map(name => ({
+    plugin: "postcss-icss-values",
+    type: "icss-value",
+    name,
+    value: exports[name]
+  }));
+
 module.exports = postcss.plugin(plugin, () => (css, result) => {
   const { icssImports, icssExports } = extractICSS(css);
+  const valuesExports = {};
   const getAliasName = createGenerator();
   const addExports = (node, name, value) => {
     if (isForbidden(name)) {
       result.warn(`Dot and hash symbols are not allowed in value "${name}"`, {
         node
       });
-    } else {
-      if (icssExports[name]) {
-        result.warn(`"${name}" value already declared`, { node });
-      }
     }
-    icssExports[name] = replaceValueSymbols(value, icssExports);
+    if (valuesExports[name]) {
+      result.warn(`"${name}" value already declared`, { node });
+    }
+    valuesExports[name] = replaceValueSymbols(value, valuesExports);
   };
 
   css.walkAtRules("value", atrule => {
@@ -148,7 +156,11 @@ module.exports = postcss.plugin(plugin, () => (css, result) => {
     atrule.remove();
   });
 
-  replaceSymbols(css, icssExports);
+  replaceSymbols(css, valuesExports);
 
-  css.prepend(createICSSRules(icssImports, icssExports));
+  css.prepend(
+    createICSSRules(icssImports, Object.assign({}, icssExports, valuesExports))
+  );
+
+  result.messages.push(...getMessages(valuesExports));
 });

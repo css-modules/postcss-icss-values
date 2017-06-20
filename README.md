@@ -98,6 +98,19 @@ Do not conflict between names you are able to import values with aliases
 }
 ```
 
+### Messages
+
+postcss-icss-values passes `result.messages` for each declared or imported value
+
+```json
+{
+  plugin: 'postcss-icss-values',
+  type: 'icss-value',
+  name: string, // exported identifier
+  value: string // generated imported identifier or value
+}
+```
+
 ## Justification
 
 See [this PR](https://github.com/css-modules/css-modules-loader-core/pull/28) for more background
