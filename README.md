@@ -1,8 +1,8 @@
 # postcss-icss-values [![Build Status][travis-img]][travis]
 
 [PostCSS]: https://github.com/postcss/postcss
-[travis-img]: https://travis-ci.org/css-modules/postcss-icss-selectors.svg
-[travis]: https://travis-ci.org/css-modules/postcss-icss-selectors
+[travis-img]: https://travis-ci.org/css-modules/postcss-icss-values.svg
+[travis]: https://travis-ci.org/css-modules/postcss-icss-values
 
 PostCSS plugin for css modules to pass arbitrary values between your module files.
 
