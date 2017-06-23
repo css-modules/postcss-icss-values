@@ -12,7 +12,7 @@ import dropWhile from "lodash/dropWhile";
 import dropRightWhile from "lodash/dropRightWhile";
 import fromPairs from "lodash/fromPairs";
 
-const plugin = "postcss-modules-values";
+const plugin = "postcss-icss-values";
 
 const chunkBy = (collection, iteratee) =>
   collection.reduce(
