@@ -82,7 +82,7 @@ console.log(primary); // -> #BF4040
 
 ### Aliases
 
-Do not conflict between names you are able to import values with aliases
+To avoid conflict between names you are able to import values with aliases
 
 ```css
 @value small as bp-small, large as bp-large from './breakpoints.css';
