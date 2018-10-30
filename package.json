@@ -1,6 +1,6 @@
 {
   "name": "postcss-icss-values",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "PostCSS plugin for CSS Modules to pass arbitrary values between your module files",
   "main": "lib/index.js",
   "files": [
